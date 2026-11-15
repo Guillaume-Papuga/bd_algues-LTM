@@ -171,8 +171,8 @@ cbind(a[c("code", "salinite_moy(g/L)", "chlorophylleA_med")],
 #Malgré les falses ses valeurs sont les mêmes la différence c'est l'arrondi, donc les données compilés
 #sont les mêmes que total2 sauf que total2 est plus complet, on va donc enregister ce jeu
 
-data_hydro_2025 <- data_total2
-write.csv(data_hydro_2025, "../processed/data_hydro_2025.csv", row.names = FALSE, fileEncoding = "UTF-8")
+data_total2
+write.csv(data_total2, "../processed/data_hydro_total2.csv", row.names = FALSE, fileEncoding = "UTF-8")
 rm(list = ls())
 
 
@@ -219,14 +219,14 @@ data_hydro_sel[["chlorophylleA"]] <- as.numeric(data_hydro_sel[["chlorophylleA"]
 
 
 ####Il est maintenant essentiel de comprend c'est quoi ce fichier total 2 par rapport à total
-data_2025 <- read.csv("../processed/data_hydro_2025.csv")
-colnames(data_2025)
-data_2025 <- data_2025[,-c(12:20)]#on enlève les sels nutrifs et les mat organique qu'on recréera après depuis les autres .csv qu'on a créer
+data_total2 <- read.csv("../processed/data_hydro_total2.csv")
+colnames(data_total2)
+data_total2 <- data_total2[,-c(12:20)]#on enlève les sels nutrifs et les mat organique qu'on recréera après depuis les autres .csv qu'on a créer
 
 
-data_2025$date_releve <- "?"
+data_total2$date_releve <- "?"
 
 pos <- which(names(data_2023) == "date_releve")
-autres <- setdiff(names(data_2025), "date_releve")
-data_2025 <- data_2025[, append(autres, "date_releve", after = pos - 1)]
+autres <- setdiff(names(data_total2), "date_releve")
+data_total2 <- data_total2[, append(autres, "date_releve", after = pos - 1)]
 
