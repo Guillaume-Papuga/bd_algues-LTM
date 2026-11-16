@@ -8,6 +8,10 @@
 #' ####################################################"
 #' 
 
+# nature des données 
+str()
+str()
+
 #' 01. Je charge les données nettoyées en csv créées dans 00 qui sont dans data_clean
 XXX <- read.csv("", row.names = 1)
 XXX <- read.csv("", row.names = 1)
