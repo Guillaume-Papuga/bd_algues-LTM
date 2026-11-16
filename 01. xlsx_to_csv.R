@@ -1,5 +1,6 @@
 #### 0. Préparation ####
 library(openxlsx)
+library(vegan)
 
 #Important, il est néceessaire d'ouvrir le projet avec bd_algues-LTM.Rproj
 setwd("data/raw")
@@ -219,15 +220,67 @@ data_hydro_sel[["chlorophylleA"]] <- as.numeric(data_hydro_sel[["chlorophylleA"]
 
 
 
-####Il est maintenant essentiel de comprend c'est quoi ce fichier total 2 par rapport à total
-data_total2 <- read.csv("../processed/data_hydro_total2.csv")
-colnames(data_total2)
-data_total2 <- data_total2[,-c(12:20)]#on enlève les sels nutrifs et les mat organique qu'on recréera après depuis les autres .csv qu'on a créer
+#Donnée de présence absence borel
+rm(list = ls())
+
+data_borel <- read.xlsx("Rendu données brutes Borel.xlsx",sheet = 2)
+write.csv(data_borel, "../processed/data_borel", row.names = FALSE, fileEncoding = "UTF-8")
 
 
-data_total2$date_releve <- "?"
+#Donnée de couverture des algues
+rm(list = ls())
+data_algues_TdV <- read.xlsx("données Algues TdV final.xlsx",sheet = 1)
 
-pos <- which(names(data_2023) == "date_releve")
-autres <- setdiff(names(data_total2), "date_releve")
-data_total2 <- data_total2[, append(autres, "date_releve", after = pos - 1)]
+#corrigé le nom des sites X3, X4, X5... prennent le nom du site à leur gauche
+noms <- names(data_algues_TdV)
+noms[1] <- "taxon"
 
+#
+for (i in 2:length(noms)) {
+  if (grepl("^X[0-9]+$", noms[i])) noms[i] <- noms[i - 1]
+}
+noms <- names(data_algues_TdV)
+noms[1] <- "taxon"
+
+# X3, X4, X5... prennent le nom du site à leur gauche
+for (i in 2:length(noms)) {
+  if (grepl("^X[0-9]+$", noms[i])) noms[i] <- noms[i - 1]
+}
+
+# la première ligne contient N, S, E, W
+direction <- as.character(unlist(data_algues_TdV[1, -1]))
+names(data_algues_TdV) <- c("taxon", paste(noms[-1], direction, sep = "_"))
+data_algues_TdV <- data_algues_TdV[-1, ]
+
+names(data_algues_TdV)[1:9]    # taxon, BAG_PET_1_N, BAG_PET_1_S, ...
+dim(data_algues_TdV)           # 10 lignes (taxons), 121 colonnes
+
+algues <- as.data.frame(t(data_algues_TdV[, -1]))
+names(algues) <- data_algues_TdV$taxon
+#Enlevé les + et passé en numérique
+for (col in 1:ncol(algues)) {
+  algues[[col]][algues[[col]] == "+"] <- "1"
+  algues[[col]] <- as.numeric(algues[[col]])
+}
+str(algues)
+write.csv(algues, "../processed/data_algues_TdV.csv",  fileEncoding = "UTF-8")
+test <- read.csv("../processed/data_algues_TdV.csv")
+dim(test)
+
+colSums(algues)
+
+
+
+##Donnée en présence absence, on pourra peut être les ajouté au jeu de donnée "Borel"
+algues__tdv_presence_absence <- read.xlsx("données Algues TdV final.xlsx",sheet = 2)
+table(unlist(algues__tdv_presence_absence[, -1]), useNA = "ifany")    # doit montrer seulement x et NA
+
+for (col in 2:ncol(algues__tdv_presence_absence)) {
+  algues__tdv_presence_absence[[col]] <- ifelse(is.na(algues__tdv_presence_absence[[col]]), 0, 1)
+}
+
+algues_tdv_pa <- as.data.frame(t(algues__tdv_presence_absence[, -1]))
+names(algues_tdv_pa) <- algues__tdv_presence_absence$Taxon
+
+str(algues_tdv_pa)
+write.csv(algues_tdv_pa, "../processed/algues_tdv_presence_absence.csv",  fileEncoding = "UTF-8")
