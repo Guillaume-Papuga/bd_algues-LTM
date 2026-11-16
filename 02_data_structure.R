@@ -8,63 +8,49 @@
 #' ####################################################"
 #' 
 
-# nature des données 
-str()
-str()
+#### 1 = macrophytes : data_macrophytes_2025
 
-#' 01. Je charge les données nettoyées en csv créées dans 00 qui sont dans data_clean
-XXX <- read.csv("", row.names = 1)
-XXX <- read.csv("", row.names = 1)
-XXX <- read.csv("", row.names = 1)
-XXX <- read.csv("", row.names = 1)
-XXX <- read.csv("", row.names = 1)
-XXX <- read.csv("", row.names = 1)
+# Végétation aquatique des lagunes en 2025.
+# Chaque ligne = un point d'observation dans une lagune
+#Dans chaque lagune, 4 directions (N, S, E, W) + 5 points par direction 
+# donc 20 lignes par lagune
+# Pour chaque point, % de recouvrement (0 à 100 %) de chaque sp
+# ou taxon 
+#dernière colonne = additionne le % de recouvrement de toutes les sp confondues
+#22 variables :
+# var1 = annee = année du relevé (toujours 2025)
+#var2= LAGUNE = code 
+# var3=ORD = direction 
+# var4= CONTACT = point ?
+#var5 =algues_ABS_COV = recouvrement par des algues en %
+#de var6 à var21 = % recouvrement des différentes sp 
+#var22 = somme % recouvrement de toutes les sp 
+
+##CHANGER CHEMIN ACCES
+macrophytes = read.csv("data/processed/data_macrophytes_2025.csv")
+
+dim(macrophytes)                   # 2440 lignes, 22 colonnes
+colSums(is.na(macrophytes))           # Non pas de NA
+sum(duplicated(macrophytes))    # lignes en double --> on aurait 20 lignes en double
+which(duplicated(macrophytes))     # les lignes en doubles = 1361 1362 1363 1364 1365 1366 1367 1368 1369 1370 1371 1372 1373 1374 1375 1376 1377 1378 1379 1380
+# A VERIFIER IMPORTANT
+
+summary(macrophytes)        # summary pour chacune des colonnes, ici pas bcp d'intérêt mais pour autres tableaux  
+
+# Plan échantillonnage 
+table(macrophytes$ORD)  # équilibré OK
+table(macrophytes$CONTACT)   # idem
+length(unique(macrophytes$LAGUNE)) # 121 ID uniques de lagunes = 121 lagunes différentes ?
+table(table(macrophytes$LAGUNE))          # on a 120 identifiants de lagunes qui ont 20 lignes et 1 lagune qui a 40 lignes PK ? 
+
+# C'est SIG_GSA_04 qui a 40 lignes au lieu de 20 : pb de code site ? 
 
 
-#### 02. Global : tailles et NA 
+# Nbr de relevés où on retrouve chaque sp, pour voir un peu comment se structurent les commus globales
+# sommées de  la ligne 6 à la ligne 21 pour avoir que les sp 
+colSums(macrophytes[, 6:21] > 0)
+# on a Althenia.filiformis qui défonce tout avec présence dans 565 relevés puis Ruppia.maritima présente dasn 325 relevés
 
-# Taille : nombre de lignes, puis nombre de colonnes
-dim()
-dim()
-dim()
-dim()
-dim()
-dim()
-
-### 03. Pourcentage de NA dans chaque tableau
-mean(is.na()) * 100
-mean(is.na()) * 100 
-mean(is.na()) * 100
-mean(is.na()) * 100
-mean(is.na()) * 100  
-mean(is.na()) * 100
-
-
-
-#### 04. Valeurs manquantes (nombre de NA par colonne)
-colSums(is.na())
-colSums(is.na())  
-colSums(is.na())
-colSums(is.na())
-colSums(is.na()) 
-
-#### 05. Lignes en double
-sum(duplicated())
-sum(duplicated())
-sum(duplicated())
-sum(duplicated())
-sum(duplicated())
-sum(duplicated())
-
-#### 06. Valeurs summary
-summary()
-summary()
-summary()
-summary()
-summary()
-summary()
-
-#### 07. Moda des variables quali= plan d'échantillonnage
-table(data_labo$type, useNA = "ifany") # équilibre ou pas ?
-table(data_distance_sediment$id_secteur, useNA = "ifany")  
-
+# abondances totales des sp en nbr d'individus dans la totalité des relevés 
+barplot(colSums(macrophytes[, 6:21]), las = 2) 
+#héhéhé à modifier on voit pas le nom des sp !!!!!! 
