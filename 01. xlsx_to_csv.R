@@ -224,7 +224,7 @@ data_hydro_sel[["chlorophylleA"]] <- as.numeric(data_hydro_sel[["chlorophylleA"]
 rm(list = ls())
 
 data_borel <- read.xlsx("Rendu données brutes Borel.xlsx",sheet = 2)
-write.csv(data_borel, "../processed/data_borel", row.names = FALSE, fileEncoding = "UTF-8")
+write.csv(data_borel, "../processed/data_borel.csv", row.names = FALSE, fileEncoding = "UTF-8")
 
 
 #Donnée de couverture des algues
