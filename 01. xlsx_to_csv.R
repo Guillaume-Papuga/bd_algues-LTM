@@ -1,7 +1,7 @@
 #### 0. Préparation ####
 library(openxlsx)
 library(vegan)
-
+readLines("../../.gitignore")
 #Important, il est néceessaire d'ouvrir le projet avec bd_algues-LTM.Rproj
 setwd("data/raw")
 getwd()
@@ -284,3 +284,8 @@ names(algues_tdv_pa) <- algues__tdv_presence_absence$Taxon
 
 str(algues_tdv_pa)
 write.csv(algues_tdv_pa, "../processed/algues_tdv_presence_absence.csv",  fileEncoding = "UTF-8")
+
+
+
+
+
