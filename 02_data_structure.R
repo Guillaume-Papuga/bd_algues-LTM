@@ -54,3 +54,4 @@ colSums(macrophytes[, 6:21] > 0)
 # abondances totales des sp en nbr d'individus dans la totalité des relevés 
 barplot(colSums(macrophytes[, 6:21]), las = 2) 
 #héhéhé à modifier on voit pas le nom des sp !!!!!! 
+
