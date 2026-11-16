@@ -197,6 +197,7 @@ data_2023_2024$date_releve <- format(as.Date(data_2023_2024$date_releve), "%Y-%m
 
 
 data_hydro_2023_2025 <- data_2023_2024
+write.csv(data_hydro_2023_2025, "../processed/data_hydro_2023_2025.csv", row.names = FALSE, fileEncoding = "UTF-8")
 
 
 data_sel <- read.csv("../processed/data_sel.csv")
