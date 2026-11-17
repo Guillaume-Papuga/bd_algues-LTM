@@ -39,6 +39,7 @@ data_sel <- data_sel[-c(355:356),]
 #Enregistrement en .csv dans le dossier processed
 write.csv(data_sel, "../processed/data_sel.csv",row.names = FALSE, fileEncoding = "UTF-8")
 
+#Clean
 rm(list = ls())
 
 
@@ -219,14 +220,6 @@ data_hydro_sel[["salinite(g/L)"]] <- as.numeric(data_hydro_sel[["salinite(g/L)"]
 data_hydro_sel[["chlorophylleA"]] <- as.numeric(data_hydro_sel[["chlorophylleA"]])
 
 
-
-#Donnée de présence absence borel
-rm(list = ls())
-
-data_borel <- read.xlsx("Rendu données brutes Borel.xlsx",sheet = 2)
-write.csv(data_borel, "../processed/data_borel.csv", row.names = FALSE, fileEncoding = "UTF-8")
-
-
 #Donnée de couverture des algues
 rm(list = ls())
 data_algues_TdV <- read.xlsx("données Algues TdV final.xlsx",sheet = 1)
@@ -271,7 +264,9 @@ colSums(algues)
 
 
 
-##Donnée en présence absence, on pourra peut être les ajouté au jeu de donnée "Borel"
+##Donnée en présence absence, on pourra peut être les ajouté au jeu de donnée "Borel" 
+# car les deux sont en présence absence, ont des espèces similaires mais différente et les sites sont différents
+
 algues__tdv_presence_absence <- read.xlsx("données Algues TdV final.xlsx",sheet = 2)
 table(unlist(algues__tdv_presence_absence[, -1]), useNA = "ifany")    # doit montrer seulement x et NA
 
@@ -283,9 +278,57 @@ algues_tdv_pa <- as.data.frame(t(algues__tdv_presence_absence[, -1]))
 names(algues_tdv_pa) <- algues__tdv_presence_absence$Taxon
 
 str(algues_tdv_pa)
-write.csv(algues_tdv_pa, "../processed/algues_tdv_presence_absence.csv",  fileEncoding = "UTF-8")
 
 
+borel <- read.xlsx("Rendu données brutes Borel.xlsx",sheet = 2)
+str(borel)
+
+# 1. Table d'équivalence : nom TdV -> nom commun
+equivalence <- c(
+  "Callithamnion corymbosum (J.E.Smith) Lyngb., 1819" = "Callithamnion.corymbosum",
+  "Ceramium ciliatum (J.Ellis) Ducluzeau, 1806"       = "Ceramium.ciliatum",
+  "Cf Ulothrix"                                       = "Cf.Ulothrix",
+  "Cladophora vadorum (Aresch.) Kütz., 1849"          = "Cladophora.vadorum",
+  "Cladophora vagabunda (L.) C.Hoek, 1963"            = "Cladophora.vagabunda",
+  "Cladophoraceae sp."                                = "Cladophoraceae.sp.",
+  "Ectocarpaceae sp."                                 = "Ectocarpaceae.sp.",
+  "Lyngbya sp."                                       = "Lyngbya.sp.",
+  "Nostoc sp."                                        = "Nostoc.sp.",
+  "Spirogyra sp."                                     = "Spirogyra.sp.",
+  "Ulva clathrata (Roth) C.Agardh, 1811"              = "Ulva.clathrata",
+  "Ulva intestinalis L., 1753"                        = "Ulva.intestinalis",
+  "Vaucheria Cf. dichotoma"                           = "Vaucheria.cf.dichotoma"
+)
+
+# 2. Application sur une copie de TdV
+pa_tdv <- algues_tdv_pa
+names(pa_tdv) <- equivalence[names(pa_tdv)]
+anyNA(names(pa_tdv))          # FALSE attendu : tous les noms ont été trouvés
+
+# 3. Codes de sites (même format que l'hydro) pour TdV et borel
+head(rownames(pa_tdv))        # contrôle : BAG_PET_1, BAG_PET_11...
+pa_tdv$code <- sub("_([0-9])$", "_0\\1", rownames(pa_tdv))
+rownames(pa_tdv) <- NULL
+
+borel_pa <- borel
+names(borel_pa)[1] <- "code"  # la colonne X0 contient les codes
+
+# 4. Tous les taxons, avec des 0 pour ceux qui manquent dans un jeu
+taxons <- union(setdiff(names(pa_tdv), "code"), setdiff(names(borel_pa), "code"))
+for (taxon in setdiff(taxons, names(pa_tdv))) pa_tdv[[taxon]] <- 0
+for (taxon in setdiff(taxons, names(borel_pa))) borel_pa[[taxon]] <- 0
+
+# 5. Origine et assemblage
+pa_tdv$source <- "TdV"
+borel_pa$source <- "borel"
+pa_total <- rbind(pa_tdv[, c("code", taxons, "source")],
+                  borel_pa[, c("code", taxons, "source")])
+
+dim(pa_total)                    # 56 lignes, 22 colonnes, le nombre de ligne correspond
 
 
+write.csv(pa_total, "../processed/algues_pres_abs_final.csv", row.names = FALSE , fileEncoding = "UTF-8")
+test <- read.csv("../processed/algues_pres_abs_final.csv")
+
+str(test)
 
