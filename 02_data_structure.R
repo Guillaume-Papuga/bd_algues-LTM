@@ -55,3 +55,39 @@ colSums(macrophytes[, 6:21] > 0)
 barplot(colSums(macrophytes[, 6:21]), las = 2) 
 #héhéhé à modifier on voit pas le nom des sp !!!!!! 
 
+
+
+#----------------------------------------------
+
+### 2. sédiments : data_mineraux
+#' analyses de sédiment faites par le labo Teysser
+#' 1 ligne = 1 lagune = 1 échantillon
+#' ET C'EST TROP CHOUETTE parce qu'on a tout : 
+#' - chimie = calcaire, MO, C, N, P, Fe)
+#' - granulométrie / texture = argile, limons, sables
+#'- propriétés physiques = matière sèche, masse volumique (MVA? savoir comment mesuré)
+
+#' C/N me semble pas mesuré direct mais par dosages du C et du N donc info redondante je pense ; à voir 
+#' 
+#' 17 var
+#' 
+#' décrire quand on sera sûrs ; voir avec VALENTINE
+#' voir comment est mesurée la masse volumique
+#' vor ce que signifie un refus etc 
+#' 
+sediment=read.csv("data/processed/data_mineraux.csv")
+str(sediment)
+
+dim(sediment)                  # on a 120 lignes et 17 colonnes : PK PAS 121 ?!!
+colSums(is.na(sediment))  #aucun Na
+sum(duplicated(sediment)) #pas de lignes en doubles 
+summary(sediment) # A COMMENTER
+
+# Granulométrie : on devrait arriver à 100%
+summary(sediment$Argile + sediment$LimonsFins + sediment$LimonsGrossiers +
+          sediment$SablesFins + sediment$SablesGrossiers)
+
+table(sediment$Cailloux) # on en a 120 à 0 
+table(sediment$Refus) # 69 avec 0 refus, 47 avec 1 refus et 4 avec 2 refus --> Refus ?
+
+
