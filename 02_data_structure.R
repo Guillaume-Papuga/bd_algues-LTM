@@ -102,6 +102,7 @@ table(sediment$Refus) # 69 avec 0 refus, 47 avec 1 refus et 4 avec 2 refus --> R
 #' IMPORTANT : Certaines stations ont un code en "co" comme RNC_co34 MAIS elles n'existent pas
 #' dans macrophytes DONC il faut vérifier ce qu'elles représentent
 #' 
+#' Si salinité = OFL --> signifie que c° trop haute pour être mesurée (sinon calculable via conductivité X T°C)
 #' Plein de fois 0.08 pour les nitrates --> normal ou limite de détection ? 
 #' 
 #' var1 = Site = nom du site (8 sites, ex. Grande Camargue)
@@ -127,12 +128,13 @@ table(eau$Site)    #nbr de relevés faits dans chaque site, entre 27 et 71
 table(eau$ID_LAG, eau$date)     # lagunes échantillonnées ou pas à chaq campagne
 
 # On pense voir bcp de 0.08, compter nbr ?
-sum(eau$nitrates == 0.08)  # 81 fois la valeur 0.08 pour les nitrates, c'est bas ++
+sum(eau$nitrates == 0.08)  # 81 fois la valeur 0.08 pour les nitrates --> c'est une limte de détection 
 #a quelles dates ? différences entre années ?
 table(eau$nitrates == 0.08, eau$date) # c'est entre fin 2024 et 2025, pas avant --> changements ? + de pluies ?
 
 #----------------------------------------------
 #### 4. pour hydro total, moyennes par lagune : data_hydro_total2
+###en charger un autre car j'ai pas les dates 
 
 #' "le + gros merdier à démeller" 
 #'pour résumer l'environnement de chaque lagune 
@@ -213,7 +215,7 @@ setdiff(eau$ID_LAG, macrophytes$LAGUNE)
 #C'est les Co 
 # "RNC_co34" "RNC_co37" "RNC_co30" "RNC_co31" "RNC_co32" "RNC_co89" "CAN_co21" "PIS_co23" "PIS_co30"
 #[10] "PIS_co70" "EOR_co40" "ORP_co50" "BAG_co30" "CAN_co60" "ORP_co30" "SIG_co80" "SIG_co90" "PIS_co21"
-
+###IMPORTANT = les Co ce sont des connections, on n'en a pas vraiment besoin ! 
 
 
 #### 6. Quels sont les sites présents dans Algues dans lequels on va avoir toutes les données nécessaires ? 
