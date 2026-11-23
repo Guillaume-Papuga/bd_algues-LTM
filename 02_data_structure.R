@@ -78,7 +78,7 @@ barplot(colSums(macrophytes[, 6:21]), las = 2)
 sediment=read.csv("data/processed/data_mineraux.csv")
 str(sediment)
 
-dim(sediment)                  # on a 120 lignes et 17 colonnes : PK PAS 121 ?!!
+dim(sediment)                  # on a 120 lignes et 17 colonnes : PK PAS 121 ?!! (Bagnas 11 sites au lieu de 10 donc viendrait de là)
 colSums(is.na(sediment))  #aucun Na
 sum(duplicated(sediment)) #pas de lignes en doubles 
 summary(sediment) # A COMMENTER
@@ -95,9 +95,9 @@ table(sediment$Refus) # 69 avec 0 refus, 47 avec 1 refus et 4 avec 2 refus --> R
 #'Nutriments dissouts dans l'eau des lagunes 
 #' 1 ligne = 1 lagune pour 1 date de prélèvement 
 #' sur 6 campagnes
-#' de 2023 à 2025
+#' de 2023 à 2025 --> On prend que le 2025)
 #' donc les lagunes appraissent pls fois
-#' 5 nutriments : silicates, nitrites, phosphates, nitrates, ammonium --> en µM aussi ? 
+#' 5 nutriments : silicates, nitrites, phosphates, nitrates, ammonium --> en µM 
 #' 
 #' IMPORTANT : Certaines stations ont un code en "co" comme RNC_co34 MAIS elles n'existent pas
 #' dans macrophytes DONC il faut vérifier ce qu'elles représentent
@@ -134,6 +134,7 @@ table(eau$nitrates == 0.08, eau$date) # c'est entre fin 2024 et 2025, pas avant 
 #----------------------------------------------
 #### 4. pour hydro total, moyennes par lagune : data_hydro_total2
 
+#' "le + gros merdier à démeller" 
 #'pour résumer l'environnement de chaque lagune 
 #'1 ligne = 1 lagune, var moyennées 
 #' On a 
@@ -212,3 +213,18 @@ setdiff(eau$ID_LAG, macrophytes$LAGUNE)
 #C'est les Co 
 # "RNC_co34" "RNC_co37" "RNC_co30" "RNC_co31" "RNC_co32" "RNC_co89" "CAN_co21" "PIS_co23" "PIS_co30"
 #[10] "PIS_co70" "EOR_co40" "ORP_co50" "BAG_co30" "CAN_co60" "ORP_co30" "SIG_co80" "SIG_co90" "PIS_co21"
+
+
+
+#### 6. Quels sont les sites présents dans Algues dans lequels on va avoir toutes les données nécessaires ? 
+#' Puis rassembler toutes les données dans un ou pls tableaux 
+#' #'élagage entre fin 2024 et fin 2025
+#' puis setdiff avec algues 
+#' 
+#' entre algues et macrophytes --> si macrophytes > algues on le prend comme référence plutot que algues ? 
+#' 
+#' créer des sous-tableau qui sont = aux setdiff 
+#' --> réenregistrer en cvs dans un sous-dossier dans process --> final 
+#' 
+#' 
+#' puis graphes 
