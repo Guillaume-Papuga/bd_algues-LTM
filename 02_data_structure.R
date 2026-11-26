@@ -218,9 +218,10 @@ setdiff(eau$ID_LAG, macrophytes$LAGUNE)
 ###IMPORTANT = les Co ce sont des connections, on n'en a pas vraiment besoin ! 
 
 
-#### 6. Quels sont les sites présents dans Algues dans lequels on va avoir toutes les données nécessaires ? 
+#### 6. Notes RDV = à faire = Quels sont les sites présents dans Algues dans lequels on va avoir toutes les données nécessaires ? 
 #' Puis rassembler toutes les données dans un ou pls tableaux 
-#' #'élagage entre fin 2024 et fin 2025
+#' #'Prendre que les relevés de mars 2025
+#' Donnera 51 lagunes avec qlq manques 
 #' puis setdiff avec algues 
 #' 
 #' entre algues et macrophytes --> si macrophytes > algues on le prend comme référence plutot que algues ? 
@@ -230,3 +231,185 @@ setdiff(eau$ID_LAG, macrophytes$LAGUNE)
 #' 
 #' 
 #' puis graphes 
+
+#' Décisions prises avec Valentine :
+#' - on garde UNE campagne : mars 2025 = début du pic de production
+#'et même période que les relevés macrophytes
+#' - tout passer en prés/abs
+#' -macrophytes : fréquence = nbr de points où l'sp est vue / 20 points  -->  occurence
+#'   (garde pas %rec car biais observateur)
+#' - Refus et Cailloux : on les enlève =inutiles 
+#' - les stations "co" sont des connexions = pas besoin
+#'
+
+#### 6.1 Importation tableaux qui manquent 
+
+# Algues en présence/absence (TdV + Borel)
+algues=read.csv("data/processed/algues_pres_abs_final.csv")
+str(algues)
+dim(algues)                 # 56 lagunes avec 20 taxons + code_site et source
+sum(duplicated(algues$code))  # pas de doublon ici
+
+# Hydro avec les dates (2023-2025)  - 1 ligne = 1 lagune à 1 date
+hydro_serie=read.csv("data/processed/data_hydro_2023_2025.csv")
+str(hydro_serie)      # la salinité est en texte à cause des OFL --> je les mettrai en NA
+table(hydro_serie$date_releve) # Cool, on a un max de relevés en mars 2025 donc bien utilisable 
+
+
+#### 6.2 Environnement en mars 2025
+
+
+# Hydro de mars 2025
+hydro_mars=hydro_serie[hydro_serie$date_releve == "2025-03", ]
+dim(hydro_mars)             # on garde 52 lagunes et 12 var c'es bon
+
+# Salinité : OFL = trop salé pour être mesuré --> on met NA + on passe en numérique
+hydro_mars$salinite.g.L.[hydro_mars$salinite.g.L. == "OFL"]=NA
+hydro_mars$salinite.g.L.= as.numeric(hydro_mars$salinite.g.L.)
+hydro_mars$code[is.na(hydro_mars$salinite.g.L.)]   # SIG_GSA_04 
+
+# Nutriments en suspens° dans eau pour 03/2025 - je dégage en + les "Co" ; ce sont des connections, pas utiles 
+eau_mars=eau[eau$date == "2025-03", ]
+eau_mars=eau_mars[!grepl("_co", eau_mars$ID_LAG), ]
+eau_mars=eau_mars[, c("ID_LAG", "silicates", "nitrites", "phosphates", "nitrates", "ammonium")]
+names(eau_mars)[1] <- "code"     # même nom de col code partout
+dim(eau_mars)
+#OK
+
+# Sédiment : on dégage Refus et Cailloux= pas utiles 
+sed=sediment[, !(names(sediment) %in% c("Refus", "Cailloux"))]
+names(sed)[1]= "code"
+# Correction de la faute de frappe cf part 5 entre OBR et ORB
+sed$code[sed$code == "OBR_ORP_01"]= "ORB_ORP_01"
+
+#' Je ne sais pas quoi en faire parcq ne sait pas à quoi ça correspond (à voir avec Valentine) :
+#' "EOR_MOT_01 ou GM_" et PCA_01 à PCA_08 (PCA_CAP ou PCA_CHA ?)
+
+#### 6.3 Macrophytes en fréquence et en prés/abs
+
+# On enlève les 20 lignes en double de SIG_GSA_04 - celui qui fait 40
+macro =macrophytes[!duplicated(macrophytes), ]
+table(table(macro$LAGUNE))    # maintenant 20 lignes pour toutes les lagunes c'est OK
+
+# TRUE si l'sp est vue sur le point, FALSE sinon (colonnes 5 à 21, sans le total)
+vu=macro[, 5:21] > 0
+colSums(vu) #nbr de fois où chaq sp est vue dans les données
+
+# Fréquence d'occurence par lagune = moyenne des TRUE = nbr de points où l'sp est vue / 20 (ce que guillaume appelle point de contact si j'ai bien compris)
+macro_freq =aggregate(vu, by = list(code = macro$LAGUNE), FUN = mean) #je veux regrouper toutes les lignes avec le même code lagune, 
+#puis fait la moy du nbr de TRUE / 20 pour avoir la fréq d'occurence 
+head(macro_freq) #permettra de vérifier 
+names(macro_freq) = sub("_ABS_COV", "", names(macro_freq)) #retire la fin parce qu'on est plus en couverture abs
+dim(macro_freq)               # 121 lagunes
+
+# Prés/abs par lagune : 1 si vue au moins une fois sur les 20 points
+macro_pa=macro_freq #on part de la freq d'occurence
+macro_pa[, -1]=(macro_freq[, -1]>0)*1  #je prends toutes les col sauf la première, je transforme les TRUE en 1 et FALSE en 0 dans le corps de ce tableau
+colSums(macro_pa[, -1])       # nombre de lagunes où chaque sp est présente sur les 121 lagunes
+#' A VOIR : Riella.helicophylla et Zannichellia.pedunculata sont jamais vues,
+#' et Ruppia.sp = Ruppia.maritima selon Valentine mais à confirmer
+
+
+#### 6.4 Setdiff : quelles lagunes sont dans tous les tableaux ?
+
+# Lagunes d'algues absentes des autres tableaux
+setdiff(algues$code, hydro_mars$code)   # pas d'hydro en mars 2025 pour "GCA_RNC_02" "GCA_RNC_04" "GCA_RNC_05" "ORB_ORP_11"
+setdiff(algues$code, eau_mars$code)  # pas de nutriments en mars 2025 pour "GCA_RNC_02" "GCA_RNC_04" "GCA_RNC_05" "GCA_RNC_07" "ORB_ORP_11"
+setdiff(algues$code, sed$code)     # pas de sédiment pour "ORB_ORP_01"
+setdiff(algues$code, macro_freq$code)   # pas de macrophytes pour "ORB_ORP_11"
+
+# Lagunes de macrophytes absentes des autres tableaux
+setdiff(macro_freq$code, hydro_mars$code) #tout plein
+setdiff(macro_freq$code, eau_mars$code) #idem
+setdiff(macro_freq$code, sed$code)  #idem 
+#normal, on le savait - macrophytes est probablement le + restrictif
+
+# Lagunes présentes partout (intersect = ce qui est commun aux deux)
+sites_ok= intersect(algues$code, macro_freq$code)
+sites_ok=intersect(sites_ok, hydro_mars$code)
+sites_ok=intersect(sites_ok, eau_mars$code)
+sites_ok=intersect(sites_ok, sed$code)
+length(sites_ok)              # 50 lagunes --> on est OK c'est ce qu'on voulait !
+sort(sites_ok)
+#' C'est l'environnement de mars 2025 qui limite, pas algues ni macrophytes :
+#' que l'on prenne algues ou macrophytes comme référence, on garde les mêmes 50 lagunes
+#' Lagunes perdues côté algues : GCA_RNC_02, 04, 05 (pas d'hydro), GCA_RNC_07 (pas de nutriments
+#' en mars 2025), ORB_ORP_11 (ni hydro ni macrophytes)
+#' 
+#' Liste des lagunes gardées : 
+#' "BAG_PET_01" "BAG_PET_02" "BAG_PET_03" "BAG_PET_04" "BAG_PET_05" "BAG_PET_06" "BAG_PET_07" "BAG_PET_08"
+#[9] "BAG_PET_11" "BPA_PIS_01" "BPA_PIS_02" "BPA_PIS_03" "BPA_PIS_06" "BPA_PIS_07" "BPA_PIS_08" "BPA_PIS_09"
+#[17] "CAN_NAZ_01" "CAN_NAZ_02" "CAN_NAZ_05" "CAN_NAZ_06" "CAN_NAZ_07" "CAN_NAZ_08" "EOR_MOT_04" "EOR_MOT_05"
+#[25] "EOR_MOT_06" "EOR_MOT_07" "EOR_MOT_08" "EOR_MOT_10" "FOS_REL_05" "FOS_REL_07" "FOS_REL_08" "FOS_REL_09"
+#[33] "FOS_REL_10" "GCA_RNC_01" "GCA_RNC_03" "GCA_RNC_06" "GCA_RNC_08" "GCA_RNC_09" "GCA_RNC_10" "ORB_ORP_03"
+#[41] "ORB_ORP_05" "ORB_ORP_06" "ORB_ORP_08" "SIG_GSA_01" "SIG_GSA_04" "SIG_GSA_06" "SIG_GSA_07" "SIG_GSA_08"
+#[49] "SIG_GSA_09" "SIG_GSA_10"
+
+
+#### 6.5 Tableaux finaux, puis j'enregistre chacun à part dans data/processed/1_Final
+""
+# On garde les 50 lagunes dans chaque tableau avec %in% donc "fait partie de la liste "sites_ok""
+hydro_final = hydro_mars[hydro_mars$code %in% sites_ok, ] #hydrologie
+sels_final = eau_mars[eau_mars$code %in% sites_ok, ] #sels en suspens° 
+sediment_final = sed[sed$code %in% sites_ok, ] #sédiments
+algues_final = algues[algues$code %in% sites_ok, ] #algues
+macro_freq_final = macro_freq[macro_freq$code %in% sites_ok, ] #fréquence occurence macrophytes 
+macro_pa_final = macro_pa[macro_pa$code %in% sites_ok, ] # prés/abs macrophytes
+
+# Vérif°= on doit avoir 50 lignes partout, 50 lagunes
+nrow(hydro_final)
+nrow(sels_final)
+nrow(sediment_final)
+nrow(algues_final)
+nrow(macro_freq_final)
+nrow(macro_pa_final)
+# C'est OK ! 
+
+
+# Enregistrement en csv dans processed/final
+
+write.csv(hydro_final, "data/processed/1_Final/hydro_final.csv", row.names = FALSE, fileEncoding = "UTF-8")
+write.csv(sels_final, "data/processed/1_Final/sels_final.csv", row.names = FALSE, fileEncoding = "UTF-8")
+write.csv(sediment_final, "data/processed/1_Final/sediment_final.csv", row.names = FALSE, fileEncoding = "UTF-8")
+write.csv(algues_final, "data/processed/1_Final/algues_final.csv", row.names = FALSE, fileEncoding = "UTF-8")
+write.csv(macro_freq_final, "data/processed/1_Final/macrophytes_freq_final.csv", row.names = FALSE, fileEncoding = "UTF-8")
+write.csv(macro_pa_final, "data/processed/1_Final/macrophytes_pa_final.csv", row.names = FALSE, fileEncoding = "UTF-8")
+
+# Vérif°: j'essaye de lire 1 fichier
+test=read.csv("data/processed/1_Final/sels_final.csv")
+head(test)
+dim(test)
+#j'ai tout
+
+
+####Le nom des col de codes est le mêmes pour tous les tableaux, donc ne devrait pas poser de pb !
+
+
+
+
+#### 7. Liste des sp pour faire des groupes d'algues : fixées, en suspension, etc...
+#besoin que pour algues, macrophytes toutes fixées 
+liste_sp = data.frame(            #crée un tableau
+  taxon_sp= c(names(algues)[2:21]),  #colonne taxon ou sp 
+  groupe = ""                 # je veux laisser une col vide à remplir par un spécialiste 
+)
+liste_sp
+write.csv(liste_sp, "data/processed/1_Final/liste_sp_pour_groupes.csv", row.names = FALSE, fileEncoding = "UTF-8")
+# on pourra envoyer cette liste à guillaume
+# si besoin on peut l'enregistrer en atre chose que format csv 
+
+#### 8. Premiers graphes - à améliorer
+
+# Nbr de lagunes où chaque algue est identifiée
+barplot(colSums(algues_final[, 2:21]), las = 2)
+#on pourrait aussi les ranger par ordre décroissant à voir
+
+#Fréq moyenne de chaque macrophyte, toutes lagunes comprises
+barplot(colMeans(macro_freq_final[, -1]), las = 2)
+
+# Salinité par site (marge du bas agrandie pour lire les noms de sites)
+par(mar = c(10, 4, 2, 1))
+boxplot(salinite.g.L. ~ site, data = hydro_final, las = 2)
+#ok, 2 valeurs extrêmes - à voir 
+
+# CONTINUER GRAPHES avec descripteurs par sites par ex ? A discuter 
